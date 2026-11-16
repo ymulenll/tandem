@@ -39,10 +39,9 @@ public struct FilmoraImporter: Sendable {
     public var locating: MediaLocating
     public var speechLevels: SpeechLevels
 
-    /// By default, paths from TinkerDesk (the other Mac) are also tried
-    /// under this Mac's home folder.
+    /// Original paths are preserved unless explicit rewrites are supplied.
     public init(
-        locating: MediaLocating = MediaLocating(pathRewrites: [MediaLocating.tinkerDeskHome]),
+        locating: MediaLocating = MediaLocating(),
         speechLevels: SpeechLevels = .normalize
     ) {
         self.locating = locating

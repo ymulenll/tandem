@@ -692,7 +692,7 @@ final class TranscriptTests: TempFolderTestCase {
         let folder = ProjectFolder(root: temp)
         let item = try await MediaScanner.probe(url, folder: folder)
         // SpeechAnalyzer's own path; BarkTranscriptionTests has Bark's.
-        let analysis = MediaAnalysis(folder: folder, settings: AnalysisSettings(transcriptEngine: .speechAnalyzer), encoderLock: EncoderLock())
+        let analysis = MediaAnalysis(folder: folder, settings: AnalysisSettings(transcriptLocale: "en-US", transcriptEngine: .speechAnalyzer), encoderLock: EncoderLock())
         let state = await analysis.waitFor(.transcript, for: item)
         XCTAssertEqual(state, .ready)
 

@@ -10,7 +10,7 @@ macOS
 
 ## What it is
 
-This is the video editor I'm building for my Convex videos to replace Filmora. It's built so my agents can edit the same project as me, through a CLI and an MCP server, while I work in the app.
+This is Yoelvis’s fork of Mike Cann’s video editor, used alongside Record It and Telemprompit. It's built so my agents can edit the same project as me, through a CLI and an MCP server, while I work in the app.
 
 A project is just a `.tandem` JSON file in the video's folder. Tandem finds the media there, pairs up my Record It camera and screen takes, and does transcripts, waveforms and the cutout in the background.
 
@@ -42,7 +42,7 @@ progress. Install ffmpeg if you want to
 import formats macOS can't decode, such as WebM (`brew install ffmpeg`).
 
 ```bash
-git clone https://github.com/mikecann/tandem.git
+git clone https://github.com/ymulenll/tandem.git
 cd tandem
 bash setup_mac.sh
 bash install.sh
@@ -65,10 +65,20 @@ Tandem doesn't read `.env` files or need API keys to edit local media.
 Optional asset providers use macOS Keychain. `tandem assets providers` tells
 you what's missing, and [the asset guide](docs/ASSETS.md) covers setup.
 
-The release app in `~/Applications` (or `/Applications`) and the `tandem`
-command inside it send anonymous crash reports to Sentry: stack traces and
-the Mac's model and macOS version, nothing from your projects or media.
-Debug builds, tests, CI and copies anywhere else send nothing.
+This fork disables upstream crash reporting. It sends no crash reports to Mike’s Sentry account.
+
+## Yoelvis’s setup
+
+Clone: `~/Developer/content-creation/tandem`.
+Record It projects: `~/Developer/content-creation/recordings/<project>/`.
+Create the `.tandem` file in that project folder so it finds the `source` recordings.
+Use the iPhone camera and screen takes together; their timestamped names pair automatically.
+Transcripts default to Spanish (`es-ES`) through on-device SpeechAnalyzer.
+Bark is only used when you explicitly select an English transcript locale.
+Record It’s camera-delay metadata is preserved, so Tandem does not correct a take twice.
+Filmora imports use original paths unless you explicitly supply `--rewrite old=new`.
+The `decision-models` recipe is Mike’s historical example, not a preset for your footage.
+The agent guide in this fork contains your local paths and leaves editorial style for you to choose.
 
 ## Using it
 
@@ -143,9 +153,9 @@ test, which may install a language model and needs macOS 26.
 | `Sources/TandemCrashReports` | Crash reports from the installed release app |
 | `tests/` | XCTest targets, one per library |
 
-## More tools
+## Upstream credit
 
-You can find my other tools at [mikerosoft.app](https://mikerosoft.app).
+Originally created by [Mike Cann](https://github.com/mikecann/tandem). Find his other tools at [mikerosoft.app](https://mikerosoft.app).
 
 MIT licensed. See [LICENSE](LICENSE). Bundled fonts and other third-party
 assets retain their own licences, which ship alongside them.

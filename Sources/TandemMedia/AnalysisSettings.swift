@@ -32,8 +32,7 @@ public struct AnalysisSettings: Codable, Equatable, Sendable {
     /// still show every frame both ways. Every 30 frames saves little and
     /// drops frames dragging backwards. docs/RENDER.md has the numbers.
     public var proxyKeyFrameInterval: Int
-    /// SpeechAnalyzer locale. en-US beat en-AU on Mike's voice (7.1% against
-    /// 8.8% word error rate in the transcription spike).
+    /// Default transcript locale for Yoelvis’s Spanish recordings.
     public var transcriptLocale: String
     /// What makes transcripts: Bark 3.0 Pro by default, SpeechAnalyzer when
     /// the locale isn't English or Bark's model isn't here yet. On ten
@@ -74,7 +73,7 @@ public struct AnalysisSettings: Codable, Equatable, Sendable {
         proxyMaxHeight: Int = 1080,
         proxyQuality: Double = 0.78,
         proxyKeyFrameInterval: Int = 15,
-        transcriptLocale: String = "en-US",
+        transcriptLocale: String = "es-ES",
         transcriptEngine: TranscriptEngine = .bark,
         matteModel: MatteModel = .robustVideoMatting,
         matteQuality: MatteQuality = .accurate,

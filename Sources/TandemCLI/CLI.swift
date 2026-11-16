@@ -670,10 +670,10 @@ struct CLI {
         let size = (longest.width ?? 0) >= 3840 ? "4K " : ""
         let article = String(minutes).hasPrefix("8") || minutes == 11 || minutes == 18 ? "an" : "a"
         let length = minutes >= 1 ? " (this one is \(article) \(minutes)-minute \(size)take)" : ""
-        return "Start the cutout matte now: Mike's PiP is pipRight with the cutout, and Tandem mattes the whole camera file before the cutout shows, "
+        return "Optional background cutout: Tandem processes the whole camera file before the cutout shows, "
             + "which takes hours for a long 4K take\(length). Once the take is placed, put one camera clip in pipRight "
             + "(tandem apply '{\"applyLayout\": {\"clipIDs\": [\"<camera clip>\"], \"preset\": \"pipRight\"}}') and the app starts it. "
-            + "Don't frame his face in a box while it runs."
+            + "Use a regular camera layout if you want to keep the background."
     }
 
     private func serve(_ args: Arguments) async throws -> Int32 {

@@ -83,7 +83,7 @@ public struct ImportRequest: Sendable {
         output: URL,
         name: String? = nil,
         searchFolders: [URL] = [],
-        pathRewrites: [MediaLocating.PathRewrite] = [MediaLocating.tinkerDeskHome],
+        pathRewrites: [MediaLocating.PathRewrite] = [],
         prober: any MediaProbing = AVFoundationProbe(),
         speechLevels: FilmoraImporter.SpeechLevels = .normalize
     ) {

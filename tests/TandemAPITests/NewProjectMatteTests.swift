@@ -13,7 +13,8 @@ final class NewProjectMatteTests: XCTestCase {
         project.settings.height = 2160
         let take = MediaItem(id: "med_cam", path: "source/2026-11-12_111045-camera.mov", kind: .video, role: .camera, duration: Time(seconds: 8 * 60 + 10), width: 3840, height: 2160, hasVideo: true, hasAudio: true)
         let line = CLI.matteLine([take], in: project) ?? ""
-        XCTAssertTrue(line.contains("Start the cutout matte now"), line)
+        XCTAssertTrue(line.contains("Optional background cutout"), line)
+        XCTAssertFalse(line.contains("Mike"), line)
         XCTAssertTrue(line.contains("an 8-minute 4K take"), line)
         XCTAssertTrue(line.contains(#""preset": "pipRight""#), line)
 

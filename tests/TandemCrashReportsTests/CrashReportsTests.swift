@@ -7,6 +7,10 @@ import XCTest
 final class CrashReportsTests: XCTestCase {
     let home = URL(fileURLWithPath: "/Users/someone", isDirectory: true)
 
+    func testPersonalForkHasNoUpstreamCrashDestination() {
+        XCTAssertTrue(CrashReports.dsn.isEmpty)
+    }
+
     func testOnlyTheInstalledAppCounts() {
         XCTAssertTrue(CrashReports.isInstalledApp(bundleURL: URL(fileURLWithPath: "/Users/someone/Applications/Tandem.app"), home: home))
         XCTAssertTrue(CrashReports.isInstalledApp(bundleURL: URL(fileURLWithPath: "/Applications/Tandem.app"), home: home))

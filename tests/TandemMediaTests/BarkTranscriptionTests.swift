@@ -145,8 +145,13 @@ final class BarkTranscriptionTests: TempFolderTestCase {
 
     // MARK: - Settings and caches
 
+    func testPersonalDefaultIsSpanishWithOnDeviceSpeechAnalyzer() {
+        XCTAssertEqual(AnalysisSettings.standard.transcriptLocale, "es-ES")
+        XCTAssertFalse(AnalysisSettings.standard.usesBark)
+    }
+
     func testBarkIsTheDefaultForEnglishAndSpeechAnalyzerForOtherLocales() {
-        let standard = AnalysisSettings()
+        let standard = AnalysisSettings(transcriptLocale: "en-US")
         XCTAssertEqual(standard.transcriptEngine, .bark, "Mike approved Bark 3.0 Pro")
         XCTAssertTrue(standard.usesBark)
         XCTAssertTrue(AnalysisSettings(transcriptLocale: "en-AU").usesBark)
@@ -156,9 +161,9 @@ final class BarkTranscriptionTests: TempFolderTestCase {
     }
 
     func testSwitchingEnginesRemakesTranscriptsOnly() {
-        let speech = AnalysisSettings(transcriptEngine: .speechAnalyzer)
+        let speech = AnalysisSettings(transcriptLocale: "en-US", transcriptEngine: .speechAnalyzer)
         XCTAssertEqual(speech.canonical(for: .transcript), "{\"locale\":\"en-US\"}", "SpeechAnalyzer transcripts keep the key they had")
-        let bark = AnalysisSettings()
+        let bark = AnalysisSettings(transcriptLocale: "en-US")
         XCTAssertEqual(bark.canonical(for: .transcript), "{\"engine\":\"bark-3.0-pro\",\"locale\":\"en-US\"}")
         XCTAssertEqual(AnalysisKind.allCases.filter { bark.canonical(for: $0) != speech.canonical(for: $0) }, [.transcript])
         let french = AnalysisSettings(transcriptLocale: "fr-FR")

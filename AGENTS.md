@@ -69,3 +69,11 @@ this repo root. It requires macOS 15 or newer and Xcode 26 or newer with Swift 6
 - Avoid eyebrows and kickers in new UI designs.
 - Start PR descriptions with `## Why`, explaining what prompted the change
   and why it is worth making.
+
+## Personal fork defaults
+
+This fork belongs to Yoelvis. Clone: ~/Developer/content-creation/tandem.
+Projects: ~/Developer/content-creation/recordings/<project>/.
+Do not restore Mike’s Sentry DSN or implicit TinkerDesk path rewrites.
+Historical recipes remain opt-in examples. Editorial preferences must come from
+the user, not upstream anecdotes. Preserve Record It camera-delay metadata.
