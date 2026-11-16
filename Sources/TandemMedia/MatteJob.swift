@@ -133,6 +133,7 @@ final class MattePipeline: @unchecked Sendable {
     private let pictureHeight: Int
 
     private let condition = NSCondition()
+    private let threads = DispatchGroup()
     private var inbox: [(index: Int, buffer: CVPixelBuffer, time: CMTime)] = []
     private var results: [Int: Worked] = [:]
     private var decoded = 0
@@ -150,6 +151,7 @@ final class MattePipeline: @unchecked Sendable {
     private(set) var failures = 0
 
     private let stateless: Bool
+    private let processorFactory: @Sendable () -> any MatteFrameProcessing
 
     /// A worker's result: the matte (nil if Vision failed) and, when
     /// smoothing, the frame's picture.
@@ -159,8 +161,11 @@ final class MattePipeline: @unchecked Sendable {
         var time: CMTime
     }
 
-    init(reader: VideoFrameReader, width: Int, height: Int, settings: AnalysisSettings, workers: Int, stateless: Bool = false) throws {
+    init(reader: VideoFrameReader, width: Int, height: Int, settings: AnalysisSettings, workers: Int, stateless: Bool = false, processorFactory: (@Sendable () -> any MatteFrameProcessing)? = nil) throws {
         self.stateless = stateless
+        self.processorFactory = processorFactory ?? {
+            MatteBlender(width: width, height: height, quality: settings.matteQuality, mode: settings.matteMode, props: settings.matteProps, stateless: stateless)
+        }
         self.reader = reader
         self.width = width
         self.height = height
@@ -175,18 +180,28 @@ final class MattePipeline: @unchecked Sendable {
     /// The decode and Vision threads run at the job's QoS (`JobContext.qos`),
     /// so a matte nobody is waiting on stays in the background.
     func start(qos: DispatchQoS.QoSClass) {
-        let decoder = Thread { [self] in decodeLoop() }
+        threads.enter()
+        let decoder = Thread { [self] in
+            defer { threads.leave() }
+            decodeLoop()
+        }
         decoder.name = "tandem.matte.decode"
         decoder.qualityOfService = qos.threadQoS
         decoder.start()
         for index in 0..<workerCount {
-            let worker = Thread { [self] in workLoop() }
+            threads.enter()
+            let worker = Thread { [self] in
+                defer { threads.leave() }
+                workLoop()
+            }
             worker.name = "tandem.matte.vision.\(index)"
             worker.qualityOfService = qos.threadQoS
             worker.start()
         }
     }
 
+    /// Finish active frame requests before the job tears down its reader,
+    /// writer or cache folder, or a subsequent job starts more Vision work.
     func stop() {
         condition.lock()
         stopped = true
@@ -194,6 +209,7 @@ final class MattePipeline: @unchecked Sendable {
         results.removeAll()
         condition.broadcast()
         condition.unlock()
+        threads.wait()
     }
 
     private func decodeLoop() {
@@ -219,6 +235,7 @@ final class MattePipeline: @unchecked Sendable {
                 return
             }
             while inbox.count >= workerCount * 2, !stopped { condition.wait() }
+            guard !stopped else { condition.unlock(); return }
             inbox.append((index, frame.buffer, frame.time))
             index += 1
             decoded = index
@@ -228,7 +245,7 @@ final class MattePipeline: @unchecked Sendable {
     }
 
     private func workLoop() {
-        let blender = MatteBlender(width: width, height: height, quality: settings.matteQuality, mode: settings.matteMode, props: settings.matteProps, stateless: stateless)
+        let blender = processorFactory()
         let smoothing = settings.matteSmoothing == .steady
         while true {
             condition.lock()
@@ -250,9 +267,11 @@ final class MattePipeline: @unchecked Sendable {
             }
 
             condition.lock()
+            guard !stopped else { condition.unlock(); return }
             // Don't run far ahead of the writer: memory stays flat however
             // long the take is.
             while results.count >= workerCount * 4, job.index > next, !stopped { condition.wait() }
+            guard !stopped else { condition.unlock(); return }
             results[job.index] = worked
             condition.broadcast()
             condition.unlock()
@@ -324,7 +343,11 @@ final class MattePipeline: @unchecked Sendable {
 
 /// Turns one frame into a matte. Each worker owns one: Vision requests and
 /// scratch buffers are reused frame to frame.
-final class MatteBlender {
+protocol MatteFrameProcessing {
+    func matte(for frame: CVPixelBuffer) -> [UInt8]?
+}
+
+final class MatteBlender: MatteFrameProcessing {
     let width: Int
     let height: Int
     let mode: CutoutMode

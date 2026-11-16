@@ -252,7 +252,7 @@ final class NormaliserTests: XCTestCase {
         guard let ffmpeg = FFmpeg.locate() else { throw XCTSkip("ffmpeg isn't installed") }
         let folder = tempFolder("ogg")
         let input = folder.appendingPathComponent("original.ogg")
-        try ffmpeg.run(["-y", "-v", "error", "-f", "lavfi", "-i", "sine=frequency=440:duration=1:sample_rate=44100", "-c:a", "libvorbis", input.path])
+        try ffmpeg.run(["-y", "-v", "error", "-f", "lavfi", "-i", "sine=frequency=440:duration=1:sample_rate=44100", "-ac", "2", "-c:a", "vorbis", "-strict", "experimental", input.path])
 
         let result = try await AssetNormaliser(ffmpeg: ffmpeg).normalise(input, into: folder)
 

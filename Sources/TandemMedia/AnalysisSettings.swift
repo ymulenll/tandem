@@ -112,15 +112,12 @@ public struct AnalysisSettings: Codable, Equatable, Sendable {
         Self.json(values(for: kind))
     }
 
-    /// The settings part of one item's cache key: `canonical(for:)`, plus
-    /// `"alpha":"1"` for the proxy of video with alpha. Proxies of such
-    /// video keep the alpha since 2026-09-29; the opaque ones made before
-    /// showed black (or the colour straight alpha keeps under the clear
-    /// parts) over the track below. The extra value retires those, while
-    /// every other proxy keeps its key and its file.
+    /// An alpha-specific proxy version keeps ordinary camera and screen
+    /// caches unchanged. Version 1 kept transparency; version 2 also
+    /// preserves straight-alpha colours and edges during scaling.
     public func canonical(for kind: AnalysisKind, item: MediaItem) -> String {
         var values = values(for: kind)
-        if kind == .proxy && item.hasAlpha { values["alpha"] = "1" }
+        if kind == .proxy && item.hasAlpha { values["alpha"] = "2" }
         return Self.json(values)
     }
 

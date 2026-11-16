@@ -320,22 +320,24 @@ final class AnalysisTests: TempFolderTestCase {
             XCTAssertEqual(standard.canonical(for: kind, item: screen), standard.canonical(for: kind), "\(kind)")
             if kind != .proxy { XCTAssertEqual(standard.canonical(for: kind, item: overlay), standard.canonical(for: kind), "\(kind)") }
         }
-        XCTAssertEqual(standard.canonical(for: .proxy, item: overlay), "{\"alpha\":\"1\",\"box\":\"1920x1080\",\"keyframes\":\"15\",\"quality\":\"0.78\"}")
+        XCTAssertEqual(standard.canonical(for: .proxy, item: overlay), "{\"alpha\":\"2\",\"box\":\"1920x1080\",\"keyframes\":\"15\",\"quality\":\"0.78\"}")
 
-        // Version 3 proxies as they were cached before, keyed without alpha.
+        // Opaque proxies keep their key; alpha version 1 proxies must rebuild.
         touch(screen.path, contents: "screen")
         touch(overlay.path, contents: "overlay")
         let analysis = analysis()
         for item in [screen, overlay] {
             let fingerprint = try XCTUnwrap(analysis.fingerprint(for: item))
-            let settings = standard.canonical(for: .proxy)
+            var legacy = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(standard.canonical(for: .proxy).utf8)) as? [String: String])
+            if item.hasAlpha { legacy["alpha"] = "1" }
+            let settings = String(decoding: try JSONSerialization.data(withJSONObject: legacy, options: [.sortedKeys]), as: UTF8.self)
             let pending = try analysis.cache.begin(kind: .proxy, key: AnalysisCache.key(fingerprint: fingerprint, kind: .proxy, algorithmVersion: 3, settings: settings))
             try Data([1]).write(to: pending.folder.appendingPathComponent(ProxyJob.file))
             try analysis.cache.commit(pending, fingerprint: fingerprint, algorithmVersion: 3, settings: settings, source: item.path)
         }
         XCTAssertEqual(analysis.state(.proxy, for: screen), .ready, "the screen's proxy stays")
         XCTAssertNotNil(analysis.proxyURL(for: screen))
-        XCTAssertEqual(analysis.state(.proxy, for: overlay), .missing, "the overlay's proxy lost its alpha, so it's made again")
+        XCTAssertEqual(analysis.state(.proxy, for: overlay), .missing, "the old alpha proxy could darken colours, so it is made again")
         XCTAssertNil(analysis.proxyURL(for: overlay))
     }
 

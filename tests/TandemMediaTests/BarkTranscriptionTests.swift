@@ -353,7 +353,7 @@ final class BarkTranscriptionTests: TempFolderTestCase {
         try SyntheticMedia.writeAudioFile(to: file("source/take-camera.wav"), segments: [(1, 0.3)])
         let folder = ProjectFolder(root: temp)
         let take = try await MediaScanner.probe(file("source/take-camera.wav"), folder: folder)
-        let analysis = MediaAnalysis(folder: folder, encoderLock: EncoderLock())
+        let analysis = MediaAnalysis(folder: folder, settings: AnalysisSettings(transcriptLocale: "en-US"), encoderLock: EncoderLock())
         let store = store(["vocab.json": Data("{}".utf8)])
         analysis.barkStore = store
         // The fallback as `TranscriptJob` leaves it: SpeechAnalyzer's words
@@ -383,7 +383,7 @@ final class BarkTranscriptionTests: TempFolderTestCase {
         try SyntheticMedia.writeAudioFile(to: file("source/take-camera.wav"), segments: [(1, 0.3)])
         let folder = ProjectFolder(root: temp)
         let take = try await MediaScanner.probe(file("source/take-camera.wav"), folder: folder)
-        let analysis = MediaAnalysis(folder: folder, encoderLock: EncoderLock())
+        let analysis = MediaAnalysis(folder: folder, settings: AnalysisSettings(transcriptLocale: "en-US"), encoderLock: EncoderLock())
         analysis.barkStore = store(["vocab.json": Data("{}".utf8)])
         let key = try XCTUnwrap(analysis.cacheKey(.transcript, for: take))
         func commit(_ engine: String, fallback: Bool) throws {

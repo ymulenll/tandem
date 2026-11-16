@@ -23,17 +23,28 @@ The brief test take contains English test speech; this verifies the pipeline, no
 
 ## Verification on 2026-11-16
 
-Installer tests and shell syntax checks passed. Nine targeted tests passed for
-personal defaults, transcript-engine selection, crash reporting, import defaults,
-and new-project guidance. Release and debug app builds succeeded. Playback was
-observed in the staged app; validation and a 305-frame render check found no problems.
+The full `swift test` suite passes: 2,497 tests counted, 63 skipped by the
+suite’s opt-in or environment checks, zero failures. Installer tests and shell
+syntax checks pass. The rebuilt signed app opened the saved demo and played it.
 
-The full Swift suite was run and did not pass:
+The original pending issues are resolved:
 
-- Four playback-start timing assertions exceeded limits (roughly 0.3 seconds on this setup).
-- Apple Vision crashed inside person segmentation during a matte-cancellation test.
-- An Ogg fixture requires libvorbis, which this FFmpeg build does not include.
+- Playback-start timing checks pass with MacBook speakers as the output after
+  Bluetooth headphones were disconnected. No timing assertions were relaxed.
+- Vision cutout shutdown now waits for decoder and processing workers before
+  the job cleans up. A deterministic held-frame regression failed before the
+  fix and passes now, as does the real matte-cancellation test in the full suite.
+- The Ogg fixture uses FFmpeg’s native Vorbis encoder, so it does not require
+  an optional libvorbis encoder. Actual Ogg decoding and normalization pass.
+- English Bark fallback fixtures explicitly select English, independently of
+  the app’s Spanish default.
 
-The demo uses no background cutout. Cutout reliability needs further investigation
-before relying on it for an important edit. The optional speech-model integration
-test was not enabled. No paid asset or generation services were used.
+Full validation also exposed dark semi-transparent overlay previews. The
+straight-alpha scaling path now resamples with explicit premultiplication and
+restores straight alpha afterward, preserving both colour and soft edges.
+Coverage includes ProRes, HEVC-with-alpha and QuickTime Animation previews and
+playback. Only alpha preview caches change version; ordinary camera and screen
+previews retain their existing cache keys.
+
+No paid services were used. Optional live-provider, real-footage and model
+integration tests remain subject to their existing opt-in requirements.

@@ -1,3 +1,4 @@
+import Accelerate
 import AVFoundation
 import CoreMedia
 import CoreVideo
@@ -138,6 +139,32 @@ final class PixelScaler: @unchecked Sendable {
         CVPixelBufferPoolCreatePixelBuffer(nil, pool, &destination)
         guard let destination else { throw MediaError.failed("Out of video memory") }
         CVBufferPropagateAttachments(source, destination)
+        if CVPixelBufferGetPixelFormatType(source) == kCVPixelFormatType_32BGRA,
+           CVBufferCopyAttachment(source, kCVImageBufferAlphaChannelModeKey, nil) as? String == kCVImageBufferAlphaChannelMode_StraightAlpha as String {
+            // VideoToolbox darkens straight-alpha RGB while resizing but
+            // retains the straight-alpha tag. Resample with explicit
+            // premultiplication, then restore straight alpha, so neither
+            // semi-transparent colours nor transparent edges darken.
+            CVPixelBufferLockBaseAddress(source, .readOnly)
+            CVPixelBufferLockBaseAddress(destination, [])
+            defer {
+                CVPixelBufferUnlockBaseAddress(destination, [])
+                CVPixelBufferUnlockBaseAddress(source, .readOnly)
+            }
+            var input = vImage_Buffer(data: CVPixelBufferGetBaseAddress(source), height: vImagePixelCount(CVPixelBufferGetHeight(source)), width: vImagePixelCount(CVPixelBufferGetWidth(source)), rowBytes: CVPixelBufferGetBytesPerRow(source))
+            var output = vImage_Buffer(data: CVPixelBufferGetBaseAddress(destination), height: vImagePixelCount(height), width: vImagePixelCount(width), rowBytes: CVPixelBufferGetBytesPerRow(destination))
+            var premultiplied = vImage_Buffer()
+            var status = vImageBuffer_Init(&premultiplied, input.height, input.width, 32, vImage_Flags(kvImageNoFlags))
+            guard status == kvImageNoError else { throw MediaError.failed("Allocating an alpha frame failed (\(status))") }
+            defer { free(premultiplied.data) }
+            status = vImagePremultiplyData_RGBA8888(&input, &premultiplied, vImage_Flags(kvImageNoFlags))
+            guard status == kvImageNoError else { throw MediaError.failed("Preparing an alpha frame failed (\(status))") }
+            status = vImageScale_ARGB8888(&premultiplied, &output, nil, vImage_Flags(kvImageHighQualityResampling))
+            guard status == kvImageNoError else { throw MediaError.failed("Scaling an alpha frame failed (\(status))") }
+            status = vImageUnpremultiplyData_RGBA8888(&output, &output, vImage_Flags(kvImageNoFlags))
+            guard status == kvImageNoError else { throw MediaError.failed("Restoring an alpha frame failed (\(status))") }
+            return destination
+        }
         let status = VTPixelTransferSessionTransferImage(session, from: source, to: destination)
         guard status == noErr else { throw MediaError.failed("Scaling a frame failed (\(status))") }
         return destination
